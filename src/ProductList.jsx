@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import './ProductList.css'
+import React, { useState } from 'react';
+import './ProductList.css';
 import CartItem from './CartItem';
+import { useDispatch } from 'react-redux';
+import { addItem } from './CartSlice'; // adjust path if needed
+
 function ProductList({ onHomeClick }) {
     const [showCart, setShowCart] = useState(false);
-    const [showPlants, setShowPlants] = useState(false); // State to control the visibility of the About Us page
+    const [showPlants, setShowPlants] = useState(false);
+    const [addedToCart, setAddedToCart] = useState({}); // track added items by name
+
+    const dispatch = useDispatch();
 
     const plantsArray = [
         {
@@ -212,26 +218,27 @@ function ProductList({ onHomeClick }) {
             ]
         }
     ];
+
     const styleObj = {
         backgroundColor: '#4CAF50',
         color: '#fff!important',
         padding: '15px',
         display: 'flex',
         justifyContent: 'space-between',
-        alignIems: 'center',
+        alignItems: 'center',
         fontSize: '20px',
-    }
+    };
     const styleObjUl = {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '1100px',
-    }
+    };
     const styleA = {
         color: 'white',
         fontSize: '30px',
         textDecoration: 'none',
-    }
+    };
 
     const handleHomeClick = (e) => {
         e.preventDefault();
@@ -240,42 +247,122 @@ function ProductList({ onHomeClick }) {
 
     const handleCartClick = (e) => {
         e.preventDefault();
-        setShowCart(true); // Set showCart to true when cart icon is clicked
+        setShowCart(true);
     };
     const handlePlantsClick = (e) => {
         e.preventDefault();
-        setShowPlants(true); // Set showAboutUs to true when "About Us" link is clicked
-        setShowCart(false); // Hide the cart when navigating to About Us
+        setShowPlants(true);
+        setShowCart(false);
     };
 
     const handleContinueShopping = (e) => {
         e.preventDefault();
         setShowCart(false);
     };
+
+    // Helper to format cost without creating $$ if cost already contains $
+    const formatCost = (cost) => {
+        if (!cost && cost !== 0) return '';
+        const costStr = String(cost);
+        return costStr.startsWith('$') ? costStr : `$${costStr}`;
+    };
+
+    // The handleAddToCart implementation you provided, with dispatch and local state update.
+    const handleAddToCart = (product) => {
+        if (!product) return;
+        dispatch(addItem(product)); // Dispatch the action to add the product to the cart (Redux action)
+
+        setAddedToCart((prevState) => ({ // Update the local state to reflect that the product has been added
+            ...prevState, // Spread the previous state to retain existing entries
+            [product.name]: true, // Set the current product's name as a key with value 'true' to mark it as added
+        }));
+    };
+
     return (
         <div>
             <div className="navbar" style={styleObj}>
                 <div className="tag">
-                    <div className="luxury">
-                        <img src="https://cdn.pixabay.com/photo/2020/08/05/13/12/eco-5465432_1280.png" alt="" />
-                        <a href="/" onClick={(e) => handleHomeClick(e)}>
+                    <div className="luxury" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <img src="https://cdn.pixabay.com/photo/2020/08/05/13/12/eco-5465432_1280.png" alt="logo" style={{ height: 48 }} />
+                        <a href="/" onClick={(e) => handleHomeClick(e)} style={{ textDecoration: 'none', color: 'white' }}>
                             <div>
-                                <h3 style={{ color: 'white' }}>Paradise Nursery</h3>
+                                <h3 style={{ color: 'white', margin: 0 }}>Paradise Nursery</h3>
                                 <i style={{ color: 'white' }}>Where Green Meets Serenity</i>
                             </div>
                         </a>
                     </div>
-
                 </div>
+
                 <div style={styleObjUl}>
-                    <div> <a href="#" onClick={(e) => handlePlantsClick(e)} style={styleA}>Plants</a></div>
-                    <div> <a href="#" onClick={(e) => handleCartClick(e)} style={styleA}><h1 className='cart'><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" id="IconChangeColor" height="68" width="68"><rect width="156" height="156" fill="none"></rect><circle cx="80" cy="216" r="12"></circle><circle cx="184" cy="216" r="12"></circle><path d="M42.3,72H221.7l-26.4,92.4A15.9,15.9,0,0,1,179.9,176H84.1a15.9,15.9,0,0,1-15.4-11.6L32.5,37.8A8,8,0,0,0,24.8,32H8" fill="none" stroke="#faf9f9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" id="mainIconPathAttribute"></path></svg></h1></a></div>
+                    <div><a href="#" onClick={(e) => handlePlantsClick(e)} style={styleA}>Plants</a></div>
+                    <div>
+                        <a href="#" onClick={(e) => handleCartClick(e)} style={styleA}>
+                            <h1 className='cart' style={{ margin: 0 }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" id="IconChangeColor" height="48" width="48">
+                                    <rect width="156" height="156" fill="none"></rect>
+                                    <circle cx="80" cy="216" r="12"></circle>
+                                    <circle cx="184" cy="216" r="12"></circle>
+                                    <path d="M42.3,72H221.7l-26.4,92.4A15.9,15.9,0,0,1,179.9,176H84.1a15.9,15.9,0,0,1-15.4-11.6L32.5,37.8A8,8,0,0,0,24.8,32H8" fill="none" stroke="#faf9f9" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                                </svg>
+                            </h1>
+                        </a>
+                    </div>
                 </div>
             </div>
+
             {!showCart ? (
-                <div className="product-grid">
-
-
+                // Use the mapping structure you requested
+                <div className="product-grid" style={{ padding: 24 }}>
+                    {plantsArray.map((category, index) => ( // Loop through each category in plantsArray
+                        <div key={index} style={{ marginBottom: 28 }}> {/* Unique key for each category div */}
+                            <h1 style={{ margin: '8px 0' }}>
+                                <div>{category.category}</div> {/* Display the category name */}
+                            </h1>
+                            <div className="product-list" style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}> {/* Container for the list of plant cards */}
+                                {category.plants.map((plant, plantIndex) => ( // Loop through each plant in the current category
+                                    <div
+                                        className="product-card"
+                                        key={plantIndex} /* Unique key for each plant card */
+                                        style={{
+                                            width: 240,
+                                            border: '1px solid #e6e6e6',
+                                            borderRadius: 8,
+                                            padding: 12,
+                                            background: '#fff',
+                                            boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                                        }}
+                                    >
+                                        <img
+                                            className="product-image"
+                                            src={plant.image} // Display the plant image
+                                            alt={plant.name} // Alt text for accessibility
+                                            style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 6 }}
+                                        />
+                                        <div className="product-title" style={{ fontWeight: 600, marginTop: 8 }}>{plant.name}</div> {/* Display plant name */}
+                                        <div className="product-description" style={{ fontSize: 13, color: '#555', marginTop: 6 }}>{plant.description}</div> {/* Display plant description */}
+                                        <div className="product-cost" style={{ marginTop: 8, fontWeight: 700 }}>{formatCost(plant.cost)}</div> {/* Display plant cost */}
+                                        <button
+                                            className="product-button"
+                                            onClick={() => handleAddToCart(plant)} // Handle adding plant to cart
+                                            disabled={!!addedToCart[plant.name]}
+                                            style={{
+                                                marginTop: 10,
+                                                width: '100%',
+                                                padding: '8px 10px',
+                                                borderRadius: 6,
+                                                border: 'none',
+                                                background: addedToCart[plant.name] ? '#9e9e9e' : '#4CAF50',
+                                                color: '#fff',
+                                                cursor: addedToCart[plant.name] ? 'default' : 'pointer'
+                                            }}
+                                        >
+                                            {addedToCart[plant.name] ? 'Added' : 'Add to Cart'}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : (
                 <CartItem onContinueShopping={handleContinueShopping} />
