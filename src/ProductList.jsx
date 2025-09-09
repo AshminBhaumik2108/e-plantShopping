@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './ProductList.css';
 import CartItem from './CartItem';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addItem } from './CartSlice'; // adjust path if needed
 
 function ProductList({ onHomeClick }) {
@@ -10,6 +10,14 @@ function ProductList({ onHomeClick }) {
     const [addedToCart, setAddedToCart] = useState({}); // track added items by name
 
     const dispatch = useDispatch();
+    const cartItems = useSelector((state) => (state.cart && state.cart.items) ? state.cart.items : []);
+
+    // Calculate total quantity in cart for the badge
+    const calculateTotalQuantity = () => {
+        return cartItems && cartItems.length > 0
+            ? cartItems.reduce((total, item) => total + (item.quantity || 0), 0)
+            : 0;
+    };
 
     const plantsArray = [
         {
@@ -295,7 +303,7 @@ function ProductList({ onHomeClick }) {
 
                 <div style={styleObjUl}>
                     <div><a href="#" onClick={(e) => handlePlantsClick(e)} style={styleA}>Plants</a></div>
-                    <div>
+                    <div style={{ position: 'relative' }}>
                         <a href="#" onClick={(e) => handleCartClick(e)} style={styleA}>
                             <h1 className='cart' style={{ margin: 0 }}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" id="IconChangeColor" height="48" width="48">
@@ -306,6 +314,28 @@ function ProductList({ onHomeClick }) {
                                 </svg>
                             </h1>
                         </a>
+
+                        {calculateTotalQuantity() > 0 && (
+                            <div style={{
+                                position: 'absolute',
+                                right: -6,
+                                top: -6,
+                                minWidth: 22,
+                                height: 22,
+                                borderRadius: 12,
+                                backgroundColor: '#fff',
+                                color: '#4CAF50',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 700,
+                                fontSize: 12,
+                                border: '2px solid #4CAF50',
+                                padding: '0 6px'
+                            }}>
+                                {calculateTotalQuantity()}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -319,47 +349,52 @@ function ProductList({ onHomeClick }) {
                                 <div>{category.category}</div> {/* Display the category name */}
                             </h1>
                             <div className="product-list" style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}> {/* Container for the list of plant cards */}
-                                {category.plants.map((plant, plantIndex) => ( // Loop through each plant in the current category
-                                    <div
-                                        className="product-card"
-                                        key={plantIndex} /* Unique key for each plant card */
-                                        style={{
-                                            width: 240,
-                                            border: '1px solid #e6e6e6',
-                                            borderRadius: 8,
-                                            padding: 12,
-                                            background: '#fff',
-                                            boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
-                                        }}
-                                    >
-                                        <img
-                                            className="product-image"
-                                            src={plant.image} // Display the plant image
-                                            alt={plant.name} // Alt text for accessibility
-                                            style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 6 }}
-                                        />
-                                        <div className="product-title" style={{ fontWeight: 600, marginTop: 8 }}>{plant.name}</div> {/* Display plant name */}
-                                        <div className="product-description" style={{ fontSize: 13, color: '#555', marginTop: 6 }}>{plant.description}</div> {/* Display plant description */}
-                                        <div className="product-cost" style={{ marginTop: 8, fontWeight: 700 }}>{formatCost(plant.cost)}</div> {/* Display plant cost */}
-                                        <button
-                                            className="product-button"
-                                            onClick={() => handleAddToCart(plant)} // Handle adding plant to cart
-                                            disabled={!!addedToCart[plant.name]}
+                                {category.plants.map((plant, plantIndex) => { // Loop through each plant in the current category
+                                    const inReduxCart = cartItems.some(ci => ci.name === plant.name);
+                                    const isDisabled = !!addedToCart[plant.name] || inReduxCart;
+
+                                    return (
+                                        <div
+                                            className="product-card"
+                                            key={plantIndex} /* Unique key for each plant card */
                                             style={{
-                                                marginTop: 10,
-                                                width: '100%',
-                                                padding: '8px 10px',
-                                                borderRadius: 6,
-                                                border: 'none',
-                                                background: addedToCart[plant.name] ? '#9e9e9e' : '#4CAF50',
-                                                color: '#fff',
-                                                cursor: addedToCart[plant.name] ? 'default' : 'pointer'
+                                                width: 240,
+                                                border: '1px solid #e6e6e6',
+                                                borderRadius: 8,
+                                                padding: 12,
+                                                background: '#fff',
+                                                boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
                                             }}
                                         >
-                                            {addedToCart[plant.name] ? 'Added' : 'Add to Cart'}
-                                        </button>
-                                    </div>
-                                ))}
+                                            <img
+                                                className="product-image"
+                                                src={plant.image} // Display the plant image
+                                                alt={plant.name} // Alt text for accessibility
+                                                style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 6 }}
+                                            />
+                                            <div className="product-title" style={{ fontWeight: 600, marginTop: 8 }}>{plant.name}</div> {/* Display plant name */}
+                                            <div className="product-description" style={{ fontSize: 13, color: '#555', marginTop: 6 }}>{plant.description}</div> {/* Display plant description */}
+                                            <div className="product-cost" style={{ marginTop: 8, fontWeight: 700 }}>{formatCost(plant.cost)}</div> {/* Display plant cost */}
+                                            <button
+                                                className="product-button"
+                                                onClick={() => handleAddToCart(plant)} // Handle adding plant to cart
+                                                disabled={isDisabled}
+                                                style={{
+                                                    marginTop: 10,
+                                                    width: '100%',
+                                                    padding: '8px 10px',
+                                                    borderRadius: 6,
+                                                    border: 'none',
+                                                    background: isDisabled ? '#9e9e9e' : '#4CAF50',
+                                                    color: '#fff',
+                                                    cursor: isDisabled ? 'default' : 'pointer'
+                                                }}
+                                            >
+                                                {isDisabled ? 'Added' : 'Add to Cart'}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     ))}
@@ -372,3 +407,4 @@ function ProductList({ onHomeClick }) {
 }
 
 export default ProductList;
+
